@@ -64,7 +64,17 @@ CLASS XMLWriter FINAL:
                 -2700
             ).
         END.
-        CREATE xmlTagsProperties.
+
+        FIND FIRST xmlTagsProperties
+            WHERE (
+                xmlTagsProperties.tagId = currentIndex
+                AND UPPER(xmlTagsProperties.propName) = UPPER(propertyName)
+            ) NO-ERROR.
+
+        IF NOT AVAILABLE xmlTagsProperties THEN DO:
+            CREATE xmlTagsProperties.
+        END.
+
         ASSIGN
             xmlTagsProperties.tagId = currentIndex
             xmlTagsProperties.propName = propertyName
@@ -95,7 +105,16 @@ CLASS XMLWriter FINAL:
             ).
         END.
 
-        CREATE xmlTagsProperties.
+        FIND FIRST xmlTagsProperties
+            WHERE (
+                xmlTagsProperties.tagId = tagIdTarget
+                AND UPPER(xmlTagsProperties.propName) = UPPER(propertyName)
+            ) NO-ERROR.
+
+        IF NOT AVAILABLE xmlTagsProperties THEN DO:
+            CREATE xmlTagsProperties.
+        END.
+
         ASSIGN
             xmlTagsProperties.tagId = xmlTags.tagId
             xmlTagsProperties.propName = propertyName
@@ -166,6 +185,105 @@ CLASS XMLWriter FINAL:
         OUTPUT TO VALUE(fp).
             PUT UNFORMATTED writeXMLText().
         CLOSE OUTPUT.
+    END METHOD.
+
+    METHOD PUBLIC VOID clearWriter():
+        FOR EACH xmlTags:
+            DELETE xmlTags.
+        END. 
+        
+        FOR EACH xmlTagsProperties:
+            DELETE xmlTagsProperties
+        END.
+    END METHOD.
+
+    METHOD PUBLIC VOID removeTag():
+        IF currentIndex = 0 THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'no tag was created to remove it',
+                -2703
+            ).
+        END.
+
+        FIND FIRST xmlTags
+            WHERE xmlTags.tagId = currentIndex.
+        
+        FOR EACH xmlTagsProperties WHERE (
+            xmlTagsProperties.tagId = xmlTags.tagId
+        ):
+            DELETE xmlTagsProperties.
+        END.
+
+        DELETE xmlTags.
+        ASSIGN
+            nextIndex = currentIndex
+            currentIndex = currentIndex - 1.
+    END METHOD.
+
+    METHOD PUBLIC VOID removeTag(tagIdTarget AS INT64):
+        FIND FIRST xmlTags
+            WHERE xmlTags.tagId = tagIdTarget
+            NO-ERROR.
+        
+        IF NOT AVAILABLE xmlTags THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'tag with id ' + STRING(tagIdTarget) + ' was not found',
+                -2701
+            ).
+        END.
+
+        FOR EACH xmlTagsProperties WHERE (
+            xmlTagsProperties.tagId = xmlTags.tagId
+        ):
+            DELETE xmlTagsProperties.
+        END.
+
+        FOR EACH xmlTags WHERE xmlTags.tagId > tagIdTarget:
+            ASSIGN xmlTags.tagId = xmlTags.tagId - 1.
+        END.
+        DELETE xmlTags.
+        ASSIGN
+            nextIndex = currentIndex
+            currentIndex = currentIndex - 1.
+    END METHOD.
+
+    METHOD PUBLIC VOID removeProperty(propertyName AS CHARACTER):
+        IF currentIndex = 0 THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'no tag was create to remove this property',
+                -2704
+            ).
+        END.
+
+        FIND FIRST xmlTagsProperties
+            WHERE (
+                xmlTagsProperties.tagId = currentIndex
+                AND UPPER(xmlTagsProperties.propName) = UPPER(propertyName)
+            ) NO-ERROR.
+        IF AVAILABLE xmlTagsProperties THEN DELETE xmlTagsProperties.
+    END METHOD.
+
+    METHOD PUBLIC VOID removeProperty(
+        tagIdTarget AS INT64,
+        propertyName AS CHARACTER
+    ):
+        FIND FIRST xmlTags
+            WHERE xmlTags.tagId = tagIdTarget
+            NO-ERROR.
+        
+        IF NOT AVAILABLE xmlTags THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'tag with id ' + STRING(tagIdTarget) + ' was not found',
+                -2701
+            ).
+        END.
+
+        FIND FIRST xmlTagsProperties
+            WHERE (
+                xmlTagsProperties.tagId = currentIndex
+                AND UPPER(xmlTagsProperties.propName) = UPPER(propertyName)
+            ) NO-ERROR.
+        IF AVAILABLE xmlTagsProperties THEN DELETE xmlTagsProperties.
     END METHOD.
 
     METHOD PRIVATE INT64 getIndex():
