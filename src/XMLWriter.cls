@@ -16,6 +16,7 @@ CLASS XMLWriter FINAL:
         FIELD tagName AS CHARACTER
         FIELD isSelfClosed AS LOGICAL
         FIELD isClosingTag AS LOGICAL
+        FIELD isNaive AS LOGICAL
         INDEX idx-id AS UNIQUE PRIMARY tagId.
     
     CONSTRUCTOR XMLWriter():
@@ -42,7 +43,8 @@ CLASS XMLWriter FINAL:
             xmlTags.tagId = getIndex()
             xmlTags.tagName = tagName
             isSelfClosed = selfClosed
-            isClosingTag = NO.
+            isClosingTag = NO
+            isNaive = NO.
     END METHOD.
 
     METHOD PUBLIC VOID addClosingTag(tagName AS CHARACTER):
@@ -51,7 +53,18 @@ CLASS XMLWriter FINAL:
             xmlTags.tagId = getIndex()
             xmlTags.tagName = tagName
             isSelfClosed = NO
-            isClosingTag = YES.
+            isClosingTag = YES
+            isNaive = NO.
+    END METHOD.
+
+    METHOD PUBLIC VOID addNaiveValue(val AS CHARACTER):
+        CREATE xmlTags.
+        ASSIGN
+            xmlTags.tagId = getIndex()
+            xmlTags.tagName = val
+            isSelfClosed = NO
+            isClosingTag = NO
+            isNaive = YES.
     END METHOD.
 
     METHOD PUBLIC VOID addTagProperty(
@@ -62,6 +75,24 @@ CLASS XMLWriter FINAL:
             UNDO, THROW NEW Progress.Lang.AppError(
                 'no tag was created to assign this property',
                 -2700
+            ).
+        END.
+
+        FIND FIRST xmlTags
+            WHERE xmlTags.tagId = currentIndex.
+
+        IF xmlTags.isClosingTag THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'cannot assign property to tag id' + STRING(tagIdTarget) 
+                + ' because is closing tag',
+                -2702
+            ).
+        END.
+
+        IF xmlTags.isNaive THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'cannot assign property to naive value with id ' + STRING(tagIdTarget),
+                -2705
             ).
         END.
 
@@ -105,6 +136,13 @@ CLASS XMLWriter FINAL:
             ).
         END.
 
+        IF xmlTags.isNaive THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'cannot assign property to naive value with id ' + STRING(tagIdTarget),
+                -2705
+            ).
+        END.
+
         FIND FIRST xmlTagsProperties
             WHERE (
                 xmlTagsProperties.tagId = tagIdTarget
@@ -132,6 +170,8 @@ CLASS XMLWriter FINAL:
                 -2701
             ).
         END.
+
+        IF xmlTags.isNaive THEN RETURN xmlTags.tagName.
 
         DEFINE VARIABLE propertiesText AS CHARACTER NO-UNDO.
         IF NOT xmlTags.isClosingTag THEN DO:
@@ -291,5 +331,5 @@ CLASS XMLWriter FINAL:
             currentIndex = nextIndex
             nextIndex = nextIndex + 1.
         RETURN currentIndex.
-    END METHOD.
+k   END METHOD.
 END CLASS.
