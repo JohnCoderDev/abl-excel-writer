@@ -34,7 +34,8 @@ CLASS XMLWriter FINAL:
             xmlTags.tagId = getIndex()
             xmlTags.tagName = tagName
             isSelfClosed = NO
-            isClosingTag = NO.
+            isClosingTag = NO
+            isNaive = NO.
     END METHOD.
 
     METHOD PUBLIC VOID addTag(tagName AS CHARACTER, selfClosed AS LOGICAL):
@@ -281,6 +282,7 @@ CLASS XMLWriter FINAL:
         FOR EACH xmlTags WHERE xmlTags.tagId > tagIdTarget:
             ASSIGN xmlTags.tagId = xmlTags.tagId - 1.
         END.
+
         DELETE xmlTags.
         ASSIGN
             nextIndex = currentIndex
@@ -300,6 +302,7 @@ CLASS XMLWriter FINAL:
                 xmlTagsProperties.tagId = currentIndex
                 AND UPPER(xmlTagsProperties.propName) = UPPER(propertyName)
             ) NO-ERROR.
+
         IF AVAILABLE xmlTagsProperties THEN DELETE xmlTagsProperties.
     END METHOD.
 
@@ -331,5 +334,5 @@ CLASS XMLWriter FINAL:
             currentIndex = nextIndex
             nextIndex = nextIndex + 1.
         RETURN currentIndex.
-k   END METHOD.
+    END METHOD.
 END CLASS.
