@@ -1,7 +1,10 @@
 CLASS WorkbookWriter:
     DEFINE PRIVATE PROPERTY workbookWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relationshipWriter AS XMLWriter GET. SET.
     DEFINE PRIVATE PROPERTY currentIndex AS INT64 GET. SET.
     DEFINE PRIVATE PROPERTY nextIndex AS INT64 GET. SET.
+    DEFINE PRIVATE PROPERTY currentRelationIndex AS INT64 GET. SET.
+    DEFINE PRIVATE PROPERTY nextRelationIndex AS INT64 GET. SET.
 
     DEFINE PRIVATE TEMP-TABLE worksheet
         FIELD sheetId AS INT64
@@ -9,15 +12,25 @@ CLASS WorkbookWriter:
         FIELD sheetName AS CHARACTER
         INDEX idx-id AS UNIQUE PRIMARY sheetId ASCENDING
         INDEX idx-name AS WORD-INDEX sheetName.
+    
+    DEFINE PRIVATE TEMP-TABLE relationship
+        FIELD relationshipId AS INT64
+        FIELD relationshipType AS CHARACTER
+        FIELD relationshipTarget AS CHARACTER
+        INDEX idx-id AS UNIQUE PRIMARY relationshipId ASCENDING.
 
     CONSTRUCTOR WorkbookWriter():
         ASSIGN
             workbookWriter = NEW XMLWriter()
+            relationshipWriter = NEW XMLWriter()
             currentIndex = 0
-            nextIndex = 1.
+            nextIndex = 1
+            currentRelationIndex = 3
+            nextRelationIndex = 4.
+        
     END CONSTRUCTOR.
 
-    METHOD PUBLIC VOID addSheet(sheetName AS CHARACTER, relationId AS INT64):
+    METHOD PUBLIC VOID addSheet(sheetName AS CHARACTER):
         FIND FIRST worksheet
             WHERE worksheet.sheetName = sheetName
             NO-ERROR.
@@ -33,7 +46,15 @@ CLASS WorkbookWriter:
         ASSIGN
             worksheet.sheetId = getIndex()
             worksheet.sheetName = sheetName
-            worksheet.sheetRelationId = relationId.
+            worksheet.sheetRelationId = getRelationshipIndex().
+    END METHOD.
+
+    METHOD PRIVATE VOID addSheetRelationship():
+        CREATE relationship.
+        ASSIGN
+            relationship.relationshipId = currentRelationIndex
+            relationship.relationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"
+            relationship.relationshipTarget = "worksheets/sheet" + STRING(currentRelationIndex - 2) + ".xml".
     END METHOD.
 
     METHOD PUBLIC VOID removeSheet(sheetId AS INT64):
@@ -55,10 +76,14 @@ CLASS WorkbookWriter:
             ).
         END.
 
+        removeSheetRelationship(worksheet.sheetRelationId).
+
         DELETE worksheet.
 
         FOR EACH worksheet WHERE (worksheet.sheetId > sheetId):
-            ASSIGN worksheet.sheetId = worksheet.sheetId - 1.
+            ASSIGN
+                worksheet.sheetId = worksheet.sheetId - 1
+                worksheet.sheetRelationId = worksheet.sheetRelationId - 1.
         END.
         backIndex().
     END METHOD.
@@ -76,14 +101,41 @@ CLASS WorkbookWriter:
             ).
         END.
 
+        removeSheetRelationship(worksheet.sheetRelationId).
         ASSIGN boundId = worksheet.sheetId.
         DELETE worksheet.
 
         FOR EACH worksheet WHERE (worksheet.sheetId > boundId):
-            ASSIGN worksheet.sheetId = worksheet.sheetId - 1.
+            ASSIGN
+                worksheet.sheetId = worksheet.sheetId - 1
+                worksheet.sheetRelationId = worksheet.sheetRelationId - 1.
         END.
 
         backIndex().
+    END METHOD.
+
+    METHOD PRIVATE VOID removeSheetRelationship(relationId AS INT64):
+        FIND FIRST relationship
+            WHERE relationship.relationshipId = relationId
+            NO-ERROR.
+        
+        IF NOT AVAILABLE relationship THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'relationship with id ' + STRING(relationId) + ' was not found',
+                -2815
+            ).
+        END.
+
+        DELETE relationship.
+
+        FOR EACH relationship WHERE (relationship.relationshipId > relationId):
+            ASSIGN
+                relationship.relationshipId = relationship.relationshipId - 1
+                relationship.relationshipTarget = "worksheets/sheet" 
+                    + STRING(relationship.relationshipId  - 2) + ".xml".
+        END.
+
+        backRelationshipIndex().
     END METHOD.
 
     METHOD PRIVATE INT64 getIndex():
@@ -103,6 +155,41 @@ CLASS WorkbookWriter:
         ASSIGN
             nextIndex = currentIndex
             currentIndex = currentIndex - 1.
+    END METHOD.
+
+    METHOD PRIVATE INT64 getRelationshipIndex():
+        ASSIGN
+            currentRelationIndex = nextRelationIndex
+            nextRelationIndex = nextRelationIndex + 1.
+        RETURN currentRelationIndex.
+    END METHOD.
+
+    METHOD PRIVATE VOID backRelationshipIndex():
+        IF currentRelationIndex = 3 THEN DO:
+            UNDO, THROW NEW Progress.Lang.AppError(
+                'relation index could not be lower than 3',
+                -2814
+            ).
+        END.
+        ASSIGN
+            nextRelationIndex = currentRelationIndex
+            currentRelationIndex = currentRelationIndex - 1.
+    END METHOD.
+
+    METHOD PUBLIC LONGCHAR getWorkbookXMLText():
+        workbookWriter:clearWriter().
+        writeWorkbookHeader().
+        writeWorkbookSheets().
+        writeWorkbookFooter().
+        RETURN workbookWriter:writeXMLText().
+    END METHOD.
+
+    METHOD PUBLIC LONGCHAR getWorkbookRelationshipXMLText():
+        relationshipWriter:clearWriter().
+        writeRelationshipsHeader().
+        writeRelationshipsBody().
+        writeWorkbookFooter().
+        RETURN relationshipWriter:writeXMLText().
     END METHOD.
 
     METHOD PRIVATE VOID writeWorkbookHeader():
@@ -136,5 +223,41 @@ CLASS WorkbookWriter:
         workbookWriter:addTag("definedNames", TRUE).
         workbookWriter:addTag("calcPr", TRUE).
         workbookWriter:addClosingTag("workbook").
+    END METHOD.
+
+    METHOD PRIVATE VOID writeRelationshipsHeader():
+        relationshipWriter:addTag("Relationships").
+        relationshipWriter:addTagProperty("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships").
+
+        CREATE relationship.
+        ASSIGN
+            relationship.relationshipId = 1
+            relationship.relationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" 
+            relationship.relationshipTarget = "theme/theme1.xml".
+
+        CREATE relationship.
+        ASSIGN
+            relationship.relationshipId = 2
+            relationship.relationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" 
+            relationship.relationshipTarget = "styles.xml".
+
+        CREATE relationship.
+        ASSIGN
+            relationship.relationshipId = 3
+            relationship.relationshipType = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" 
+            relationship.relationshipTarget = "sharedStrings.xml".
+    END METHOD.
+
+    METHOD PRIVATE VOID writeRelationshipsBody():
+        FOR EACH relationship:
+            relationshipWriter:addTag("Relationship").
+            relationshipWriter:addTagProperty("Id", "rId" + STRING(relationship.relationshipId)).
+            relationshipWriter:addTagProperty("Type", relationship.relationshipType).
+            relationshipWriter:addTagProperty("Target", relationship.relationshipTarget).
+        END.
+    END METHOD.
+
+    METHOD PRIVATE VOID writeRelationshipsFooter():
+        relationshipWriter:addClosingTag("Relationships").
     END METHOD.
 END CLASS.
