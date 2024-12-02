@@ -10,8 +10,7 @@ CLASS ExcelWriter:
         FIELD strValue AS CHARACTER
         INDEX idx-id AS UNIQUE PRIMARY strId
         INDEX idx-val AS WORD-INDEX strValue.
-    
-    
+
     // TODO: methods to add values to the object
     METHOD PUBLIC VOID addValue(
         val AS CHARACTER,
@@ -25,6 +24,7 @@ CLASS ExcelWriter:
         idxRow AS INT64,
         idxColumn AS INT64
     ):
+        // 2415020
     END METHOD.
 
     METHOD PUBLIC VOID addValue(
@@ -32,6 +32,7 @@ CLASS ExcelWriter:
         idxRow AS INT64,
         idxColumn AS INT64
     ):
+        // 2415020
     END METHOD.
 
     METHOD PUBLIC VOID addValue(
@@ -47,5 +48,4 @@ CLASS ExcelWriter:
         idxColumn AS INT64
     ):
     END METHOD.
-
 END CLASS.

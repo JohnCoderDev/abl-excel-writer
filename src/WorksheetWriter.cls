@@ -1,6 +1,6 @@
 CLASS WorksheetWriter:
     DEFINE PRIVATE PROPERTY sheetWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relationshipsWriter AS XMLWriter GET. SET.
     DEFINE PUBLIC PROPERTY sheetId AS CHARACTER GET. SET.
     DEFINE PUBLIC PROPERTY sheetName AS CHARACTER GET. SET.
 
@@ -25,10 +25,10 @@ CLASS WorksheetWriter:
             sheetId = STRING(worksheetId)
             sheetName = worksheetName
             sheetWriter = NEW XMLWriter()
-            relsWriter = NEW XMLWriter().
+            relationshipsWriter = NEW XMLWriter().
 
         sheetWriter:clearWriter().
-        relsWriter:clearWriter().
+        relationshipsWriter:clearWriter().
     END CONSTRUCTOR.
     
     METHOD PUBLIC VOID addValue(
@@ -145,10 +145,8 @@ CLASS WorksheetWriter:
 
     METHOD PRIVATE VOID writeSheetFooter():
         sheetWriter:addClosingTag("sheetData").
-
         sheetWriter:addTag("drawing", TRUE).
         sheetWriter:addTagProperty("r:id", "rId" + STRING(sheetId)).
-
         sheetWriter:addClosingTag("worksheet").
     END METHOD.
     
