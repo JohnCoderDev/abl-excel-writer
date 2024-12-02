@@ -1,6 +1,6 @@
 CLASS WorksheetWriter:
     DEFINE PRIVATE PROPERTY sheetWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY relationshipsWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relationshipWriter AS RelationshipWriter GET. SET.
     DEFINE PUBLIC PROPERTY sheetId AS CHARACTER GET. SET.
     DEFINE PUBLIC PROPERTY sheetName AS CHARACTER GET. SET.
 
@@ -25,10 +25,12 @@ CLASS WorksheetWriter:
             sheetId = STRING(worksheetId)
             sheetName = worksheetName
             sheetWriter = NEW XMLWriter()
-            relationshipsWriter = NEW XMLWriter().
+            relationshipWriter = NEW RelationshipWriter().
 
-        sheetWriter:clearWriter().
-        relationshipsWriter:clearWriter().
+        relationshipWriter:addRelationship(
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+            "../drawings/drawing1.xml"
+        ).
     END CONSTRUCTOR.
     
     METHOD PUBLIC VOID addValue(
@@ -66,6 +68,10 @@ CLASS WorksheetWriter:
         writeSheetValues().
         writeSheetFooter().
         RETURN sheetWriter:writeXMLText().
+    END METHOD.
+
+    METHOD PUBLIC LONGCHAR writeWorksheetRelationsXMLText():
+        RETURN relationshipWriter:getRelationshipsXMLText().
     END METHOD.
 
     METHOD PRIVATE VOID writeSheetHeader():

@@ -107,6 +107,10 @@ CLASS RelationshipWriter:
         RETURN relationshipWriter:writeXMLText().
     END METHOD.
 
+    METHOD PUBLIC VOID clearWriter():
+        relationshipWriter:clearWriter().
+    END METHOD.
+
     METHOD PUBLIC INT64 relationsCounter():
         RETURN currentIndex.
     END METHOD.
