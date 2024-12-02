@@ -223,9 +223,9 @@ CLASS Classes.ExcelWriter.XMLWriter FINAL:
     END METHOD.
 
     METHOD PUBLIC VOID writeXMLFile(fp AS CHARACTER):
-        OUTPUT TO VALUE(fp).
-            PUT UNFORMATTED STRING(writeXMLText()).
-        OUTPUT CLOSE.
+        DEFINE VARIABLE xmlText AS LONGCHAR.
+        ASSIGN xmlText = writeXMLText().
+        COPY-LOB xmlText TO FILE fp.
     END METHOD.
 
     METHOD PUBLIC VOID clearWriter():
