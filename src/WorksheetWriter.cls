@@ -1,8 +1,8 @@
 CLASS WorksheetWriter:
-    DEFINE PRIVATE property sheetWriter as XMLWriter.
-    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter.
-    DEFINE PUBLIC PROPERTY sheetId AS CHARACTER.
-    DEFINE PUBLIC PROPERTY sheetName AS CHARACTER.
+    DEFINE PRIVATE PROPERTY sheetWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter GET. SET.
+    DEFINE PUBLIC PROPERTY sheetId AS CHARACTER GET. SET.
+    DEFINE PUBLIC PROPERTY sheetName AS CHARACTER GET. SET.
 
     DEFINE PRIVATE TEMP-TABLE worksheetValues
         FIELD val AS DECIMAL
@@ -27,8 +27,8 @@ CLASS WorksheetWriter:
             sheetWriter = NEW XMLWriter()
             relsWriter = NEW XMLWriter().
 
-        sheetWriter:clearWriter()
-        relsWriter:clearWriter()
+        sheetWriter:clearWriter().
+        relsWriter:clearWriter().
     END CONSTRUCTOR.
     
     METHOD PUBLIC VOID addValue(

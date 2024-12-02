@@ -1,7 +1,7 @@
 CLASS XMLWriter FINAL:
-    DEFINE PRIVATE PROPERTY encoding AS CHARACTER GET. SET.
+    DEFINE PRIVATE PROPERTY ENCODING AS CHARACTER GET. SET.
     DEFINE PRIVATE PROPERTY xmlVersion AS CHARACTER GET. SET.
-    DEFINE PRIVATE PROPERTY standalone as LOGICAL GET. SET.
+    DEFINE PRIVATE PROPERTY STANDALONE AS LOGICAL GET. SET.
     DEFINE PRIVATE PROPERTY nextIndex AS INT64 GET. SET.
     DEFINE PRIVATE PROPERTY currentIndex AS INT64 GET. SET.
 
@@ -21,9 +21,9 @@ CLASS XMLWriter FINAL:
     
     CONSTRUCTOR XMLWriter():
         ASSIGN
-            encoding = 'UTF-8'
+            ENCODING = 'UTF-8'
             xmlVersion = '1.0'
-            standalone = YES
+            STANDALONE = YES
             nextIndex = 1
             currentIndex = 0.
     END CONSTRUCTOR.
@@ -84,7 +84,7 @@ CLASS XMLWriter FINAL:
 
         IF xmlTags.isClosingTag THEN DO:
             UNDO, THROW NEW Progress.Lang.AppError(
-                'cannot assign property to tag id' + STRING(tagIdTarget) 
+                'cannot assign property to tag id' + STRING(currentIndex) 
                 + ' because is closing tag',
                 -2702
             ).
@@ -92,7 +92,7 @@ CLASS XMLWriter FINAL:
 
         IF xmlTags.isNaive THEN DO:
             UNDO, THROW NEW Progress.Lang.AppError(
-                'cannot assign property to naive value with id ' + STRING(tagIdTarget),
+                'cannot assign property to naive value with id ' + STRING(currentIndex),
                 -2705
             ).
         END.
@@ -114,7 +114,7 @@ CLASS XMLWriter FINAL:
     END METHOD.
 
     METHOD PUBLIC VOID addTagProperty(
-        tagIdTarget AS INT64
+        tagIdTarget AS INT64,
         propertyName AS CHARACTER,
         propertyValue AS CHARACTER
     ):
@@ -209,8 +209,8 @@ CLASS XMLWriter FINAL:
 
     METHOD PUBLIC CHARACTER getHeaderTag():
         RETURN '<?xml version="' + xmlVersion + '" '
-            + 'encoding="' + encoding + '" '
-            + 'standalone="' (IF standalone THEN 'yes' ELSE 'no') + '"?>'.
+            + 'encoding="' + ENCODING + '" '
+            + 'standalone="' + (IF STANDALONE THEN 'yes' ELSE 'no') + '"?>'.
     END METHOD.
     
     METHOD PUBLIC LONGCHAR writeXMLText():
@@ -224,8 +224,8 @@ CLASS XMLWriter FINAL:
 
     METHOD PUBLIC VOID writeXMLFile(fp AS CHARACTER):
         OUTPUT TO VALUE(fp).
-            PUT UNFORMATTED writeXMLText().
-        CLOSE OUTPUT.
+            PUT UNFORMATTED STRING(writeXMLText()).
+        OUTPUT CLOSE.
     END METHOD.
 
     METHOD PUBLIC VOID clearWriter():
@@ -234,7 +234,7 @@ CLASS XMLWriter FINAL:
         END. 
         
         FOR EACH xmlTagsProperties:
-            DELETE xmlTagsProperties
+            DELETE xmlTagsProperties.
         END.
     END METHOD.
 

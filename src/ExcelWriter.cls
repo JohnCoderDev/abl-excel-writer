@@ -1,9 +1,9 @@
 CLASS ExcelWriter:
-    DEFINE PRIVATE PROPERTY workbookWriter AS XMLWriter.
-    DEFINE PRIVATE PROPERTY sheetsWriter AS XMLWriter.
-    DEFINE PRIVATE PROPERTY themesWriter AS XMLWriter.
-    DEFINE PRIVATE PROPERTY drawingsWriter AS XMLWriter.
-    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter.
+    DEFINE PRIVATE PROPERTY workbookWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY sheetsWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY themesWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY drawingsWriter AS XMLWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter GET. SET.
 
     DEFINE PRIVATE TEMP-TABLE sharedStrings
         FIELD strId AS INT64
