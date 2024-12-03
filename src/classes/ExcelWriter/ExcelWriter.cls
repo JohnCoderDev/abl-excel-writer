@@ -1,16 +1,25 @@
 USING Classes.ExcelWriter.*.
 CLASS Classes.ExcelWriter.ExcelWriter:
-    DEFINE PRIVATE PROPERTY workbookWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY sheetsWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY themesWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY drawingsWriter AS XMLWriter GET. SET.
-    DEFINE PRIVATE PROPERTY relsWriter AS XMLWriter GET. SET.
+    DEFINE PUBLIC PROPERTY filePath AS CHARACTER GET. SET.
+    DEFINE PRIVATE PROPERTY workbook AS WorkbookWriter GET. SET.
+    DEFINE PRIVATE PROPERTY sheets AS WorksheetWriter GET. SET.
+    DEFINE PRIVATE PROPERTY relationships AS RelationshipWriter GET. SET.
 
     DEFINE PRIVATE TEMP-TABLE sharedStrings
         FIELD strId AS INT64
         FIELD strValue AS CHARACTER
         INDEX idx-id AS UNIQUE PRIMARY strId
         INDEX idx-val AS WORD-INDEX strValue.
+
+    CONSTRUCTOR ExcelWriter():
+    END CONSTRUCTOR.
+
+    CONSTRUCTOR ExcelWriter(fp AS CHARACTER):
+        ASSIGN
+            filePath = fp
+            relationships = NEW RelationshipWriter()
+            .
+    END CONSTRUCTOR.
 
     // TODO: methods to add values to the object
     METHOD PUBLIC VOID addValue(
